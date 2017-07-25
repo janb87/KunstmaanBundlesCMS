@@ -42,7 +42,8 @@ export default function createGcExampleTask(skeletonPath, namespace = 'kuma/my-p
                         getName: () => 'test-bundle',
                         namespace
                     },
-                    demosite: false
+                    demosite: false,
+                    browserSyncUrl: 'http://frontendpoc.dev.kunstmaan.be/'
                 }))
                 .pipe(gulp.dest(distPath));
         },
@@ -50,15 +51,39 @@ export default function createGcExampleTask(skeletonPath, namespace = 'kuma/my-p
             fs.move(distPath + '/bin', distPath + '/groundcontrol', cb);
         },
         function addDefaultFiles(cb) {
+            const moduleContent = `export const printMessage = (filename) => {
+    console.log(\`File \${filename} updated!\`);
+};
+`;
+            const getJsContent = (fileName) => `
+import {printMessage} from './module';
+
+printMessage('${fileName}');
+
+if (module.hot) {
+    module.hot.accept('./${fileName}', () => {
+        // Reimport is required as the variable needs to use the latest info
+        // eslint-disable-next-line global-require
+        const {printMessage: printMessageUpdated} = require('./module');
+        printMessageUpdated('${fileName}');
+    });
+}
+`;
             fs.ensureDirSync(jsPath);
-            fs.writeFileSync(jsPath + '/app.js', 'console.log(\'Hello world\');\n');
+            fs.writeFileSync(jsPath + '/module.js', moduleContent);
+            fs.writeFileSync(jsPath + '/app.js', getJsContent('module.js'));
+
             fs.ensureDirSync(adminJsPath);
-            fs.writeFileSync(adminJsPath + '/admin-bundle-extra.js', 'console.log(\'Hello world from admin\');\n');
+            fs.writeFileSync(adminJsPath + '/module.js', moduleContent);
+            fs.writeFileSync(adminJsPath + '/admin-bundle-extra.js', getJsContent('module.js'));
+            
             fs.ensureDirSync(scssPath);
             fs.writeFileSync(scssPath + '/style.scss', 'body { font-size: 20px; }\n');
+            
             // Style guide
             fs.copySync(skeletonPath + '/../gems/Gemfile', distPath + '/Gemfile');
             fs.copySync(skeletonPath + '/../Resources/ui/styleguide', appPath + '/Resources/ui/styleguide');
+            
             // Index.html
             const html = `
                 <!DOCTYPE html>

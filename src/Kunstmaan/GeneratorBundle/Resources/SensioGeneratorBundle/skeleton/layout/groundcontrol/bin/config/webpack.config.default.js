@@ -1,6 +1,6 @@
 import webpack from 'webpack';
 
-function getBabelLoaderOptions({optimize = false, transpileOnlyForLastChromes = false}) {
+function getBabelLoaderOptions({ optimize = false, transpileOnlyForLastChromes = false }) {
     if (optimize || !transpileOnlyForLastChromes) {
         return {
             babelrc: false,
@@ -45,7 +45,9 @@ export default function config(speedupLocalDevelopment, optimize = false) {
     };
 
     if (optimize) {
-        config.plugins.push(new webpack.optimize.UglifyJsPlugin({mangle: true, sourceMap: true}));
+        config.plugins.push(new webpack.optimize.UglifyJsPlugin({ mangle: true, sourceMap: true }));
+    } else {
+        config.plugins.push(new webpack.HotModuleReplacementPlugin());
     }
 
     return config;

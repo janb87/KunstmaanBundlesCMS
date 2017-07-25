@@ -54,36 +54,14 @@ export const bundleAdminExtraOptimized = createBundleTask({
     config: webpackConfigAdminExtra(consoleArguments.speedupLocalDevelopment, true)
 });
 
-export const server = createServerTask({
-    config: {
-        ui: false,
-        ghostMode: false,
-        files: [
-            'web/frontend/css/*.css',
-            'web/frontend/js/*.js',
-            'web/frontend/img/**/*',
-            'web/frontend/styleguide/*.html'
-        ],
-        open: false,
-        reloadOnRestart: true,
-{% if browserSyncUrl %}
-        proxy: {
-            target: '{{ browserSyncUrl }}'
-        },
-{% else %}
-        server: {
-            baseDir: '.'
-        },
-{% endif %}
-        notify: true
-    }
-});
+export const server = createServerTask([
+    webpackConfigApp(consoleArguments.speedupLocalDevelopment),
+    webpackConfigAdminExtra(consoleArguments.speedupLocalDevelopment)
+]);
 
 export const hologram = createHologramTask({cwd: 'src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/styleguide'});
 
 export function buildOnChange(done) {
-    gulp.watch('./src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/js/**/!(*.spec).js', bundleLocal);
-    gulp.watch('./src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/admin/js/**/!(*.spec).js', bundleAdminExtraLocal);
     gulp.watch('./src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/scss/**/*.scss', cssLocal);
     done();
 }
