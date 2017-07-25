@@ -5,6 +5,7 @@ import { adminBundle } from './groundcontrol/admin-bundle.tasks';
 import { dashboardBundle } from './groundcontrol/dashboard-bundle.tasks';
 import { mediaBundle } from './groundcontrol/media-bundle.tasks';
 import { translatorBundle } from './groundcontrol/translator-bundle.tasks';
+import createGcExampleTask from './groundcontrol/tasks/generate-groundcontrol-example';
 
 
 // AdminBundle Tasks
@@ -108,6 +109,9 @@ const testAndBuildOptimized = gulp.series(
     buildOptimized
 );
 
+// Development sepcific tasks
+const generateGcExample = gulp.series(createGcExampleTask('./src/Kunstmaan/GeneratorBundle/Resources/SensioGeneratorBundle/skeleton/layout/groundcontrol'));
+
 // Watches
 export function buildOnChange(done) {
     gulp.watch(adminBundle.config.srcPath + 'scss/**/*.scss', adminBundle.tasks.cssLocal);
@@ -121,4 +125,4 @@ export function buildOnChange(done) {
 }
 
 // Export public tasks
-export { test, buildOptimized, testAndBuildOptimized, startLocal };
+export { test, buildOptimized, testAndBuildOptimized, startLocal, generateGcExample };
