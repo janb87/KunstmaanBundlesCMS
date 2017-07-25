@@ -87,7 +87,7 @@ export default function createGcExampleTask(skeletonPath, namespace = 'kuma/my-p
             runChildProcess('npm', ['install'], distPath, cb);
         },
         function buildGcExample(cb) {
-            runChildProcess('npm', ['run', 'build'], distPath, cb);
+            runChildProcess('npm', ['run', 'testAndBuild'], distPath, cb);
         }
     ];
 };

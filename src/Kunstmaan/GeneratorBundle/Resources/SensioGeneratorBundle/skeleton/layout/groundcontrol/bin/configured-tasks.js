@@ -13,6 +13,8 @@ import {createCssLocalTask, createCssOptimizedTask} from './tasks/css';
 import createBundleTask from './tasks/bundle';
 import createServerTask from './tasks/server';
 import createHologramTask from './tasks/hologram';
+import webpackConfigApp from './config/webpack.config.app';
+import webpackConfigAdminExtra from './config/webpack.config.admin-extra';
 
 export const eslint = createEslintTask({
     src: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/js/**/*.js',
@@ -36,138 +38,20 @@ export const cssLocal = createCssLocalTask({src: './src/{{ bundle.namespace|repl
 export const cssOptimized = createCssOptimizedTask({src: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/scss/*.scss', dest: './web/frontend/css'});
 
 export const bundleLocal = createBundleTask({
-    config: {
-        entry: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/js/app.js',
-        output: {
-            filename: './web/frontend/js/bundle.js'
-        },
-        devtool: 'cheap-module-source-map',
-        module: {
-            rules: [
-                {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    loader: 'babel-loader',
-                    query: getBabelLoaderOptions({
-                        transpileOnlyForLastChromes: consoleArguments.speedupLocalDevelopment
-                    })
-                }{% if demosite %},
-                {
-                    test: /\/cargobay\/.+\.scroll-to-top\.js/,
-                    use: 'exports-loader?cargobay.scrollToTop'
-                },
-                {
-                    test: /\/cargobay\/.+\.sidebar-toggle\.js/,
-                    use: 'exports-loader?cargobay.sidebarToggle'
-                },
-                {
-                    test: /\/cargobay\/.+\.toggle\.js/,
-                    use: 'exports-loader?cargobay.toggle'
-                }{% endif %}
-
-            ]
-        }{% if demosite %},
-        plugins: [
-            new webpack.ProvidePlugin({
-                $: 'jquery',
-                jQuery: 'jquery',
-                'window.jQuery': 'jquery'
-            })
-        ]{% endif %}
-
-    }
+    config: webpackConfigApp(consoleArguments.speedupLocalDevelopment)
 });
 
 export const bundleOptimized = createBundleTask({
-    config: {
-        entry: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/js/app.js',
-        output: {
-            filename: './web/frontend/js/bundle.js'
-        },
-        devtool: 'source-map',
-        module: {
-            rules: [
-                {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    loader: 'babel-loader',
-                    query: getBabelLoaderOptions({
-                        optimize: true
-                    })
-                }{% if demosite %},
-                {
-                    test: /\/cargobay\/.+\.scroll-to-top\.js/,
-                    use: 'exports-loader?cargobay.scrollToTop'
-                },
-                {
-                    test: /\/cargobay\/.+\.sidebar-toggle\.js/,
-                    use: 'exports-loader?cargobay.sidebarToggle'
-                },
-                {
-                    test: /\/cargobay\/.+\.toggle\.js/,
-                    use: 'exports-loader?cargobay.toggle'
-                }{% endif %}
-
-            ]
-        },
-        plugins: [
-            new webpack.optimize.UglifyJsPlugin({mangle: true, sourceMap: true}){% if demosite %},
-            new webpack.ProvidePlugin({
-                $: 'jquery',
-                jQuery: 'jquery',
-                'window.jQuery': 'jquery'
-            }){% endif %}
-
-        ]
-    },
+    config: webpackConfigApp(consoleArguments.speedupLocalDevelopment, true),
     logStats: true
 });
 
 export const bundleAdminExtraLocal = createBundleTask({
-    config: {
-        entry: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/admin/js/admin-bundle-extra.js',
-        output: {
-            filename: './web/frontend/js/admin-bundle-extra.js'
-        },
-        devtool: 'source-map',
-        module: {
-            rules: [
-                {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    loader: 'babel-loader',
-                    query: getBabelLoaderOptions({
-                        transpileOnlyForLastChromes: consoleArguments.speedupLocalDevelopment
-                    })
-                }
-            ]
-        }
-    }
+    config: webpackConfigAdminExtra(consoleArguments.speedupLocalDevelopment)
 });
 
 export const bundleAdminExtraOptimized = createBundleTask({
-    config: {
-        entry: './src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/admin/js/admin-bundle-extra.js',
-        output: {
-            filename: './web/frontend/js/admin-bundle-extra.js'
-        },
-        devtool: 'source-map',
-        module: {
-            rules: [
-                {
-                    test: /\.js$/,
-                    exclude: /node_modules/,
-                    loader: 'babel-loader',
-                    query: getBabelLoaderOptions({
-                        optimize: true
-                    })
-                }
-            ]
-        },
-        plugins: [
-            new webpack.optimize.UglifyJsPlugin({mangle: true, sourceMap: true})
-        ]
-    }
+    config: webpackConfigAdminExtra(consoleArguments.speedupLocalDevelopment, true)
 });
 
 export const server = createServerTask({
@@ -208,30 +92,4 @@ export function testOnChange(done) {
     gulp.watch('./src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/js/**/*.js', eslint);
     gulp.watch('./src/{{ bundle.namespace|replace({'\\':'/'}) }}/Resources/ui/scss/**/*.scss', stylelint);
     done();
-}
-
-function getBabelLoaderOptions({optimize = false, transpileOnlyForLastChromes = false}) {
-    if (optimize || !transpileOnlyForLastChromes) {
-        return {
-            babelrc: false,
-            presets: [
-                ['es2015', {
-                    // TODO
-                    modules: false
-                }]
-            ]
-        };
-    }
-
-    return {
-        babelrc: false,
-        presets: [
-            ['env', {
-                targets: {
-                    browsers: ['last 2 Chrome versions']
-                }
-            }]
-        ],
-        cacheDirectory: true
-    };
 }
