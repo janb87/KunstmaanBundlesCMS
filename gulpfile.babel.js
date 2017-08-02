@@ -7,7 +7,7 @@ import { mediaBundle } from './groundcontrol/media-bundle.tasks';
 import { translatorBundle } from './groundcontrol/translator-bundle.tasks';
 import startLocalTask, { buildOnChange } from './groundcontrol/start-local.task';
 import createBuildGroundControlSkeletonTask from './groundcontrol/tasks/build-gc-skeleton';
-
+import { generateStaticHtml, splitCriticalCss } from './groundcontrol/critical-css.task';
 
 // AdminBundle Tasks
 const analyzeAdminBundle = gulp.series(
@@ -114,5 +114,13 @@ const startLocal = gulp.series(
 // Development sepcific tasks
 const buildGroundControlSkeleton = gulp.series(createBuildGroundControlSkeletonTask('./src/Kunstmaan/GeneratorBundle/Resources/SensioGeneratorBundle/skeleton/layout/groundcontrol'));
 
+// POC critical css only
+const createCriticalCss = gulp.series(
+    buildOptimized,
+    generateStaticHtml,
+    splitCriticalCss,
+    startLocalTask
+);
+
 // Export public tasks
-export { test, buildOptimized, testAndBuildOptimized, startLocal, buildGroundControlSkeleton };
+export { test, buildOptimized, testAndBuildOptimized, startLocal, buildGroundControlSkeleton, createCriticalCss };
