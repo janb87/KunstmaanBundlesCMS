@@ -10,14 +10,23 @@
         };
 
         var RULES = [],
-            POPUP = document.querySelector('#' + htmlId),
-            CLOSE = document.querySelector('.' + htmlId + '--close'),
-            CANCEL = document.querySelector('.' + htmlId + '--no-thanks'),
-            SUBMIT = document.querySelector('.' + htmlId + '--submit');
+            POPUP,
+            CLOSE,
+            CANCEL,
+            SUBMIT;
 
         var _listenToHtmlClicks, _listenToEvents, _conditionsMet, _forEachRule, _doConditionsMetLogic,
             _htmlNoThanks, _noThanks, _htmlClose, _close, _conversion, _htmlSubmit, _submit,
             _onSubmitSuccess, _getData, _setData;
+
+        function setElements() {
+            POPUP = document.querySelector('#' + htmlId);
+            CLOSE = document.querySelector('.' + htmlId + '--close');
+            CANCEL = document.querySelector('.' + htmlId + '--no-thanks');
+            SUBMIT = document.querySelector('.' + htmlId + '--submit');
+        }
+
+        setElements();
 
         instance.addRule = function(rule) {
             rule.setPopup(instance);
@@ -90,9 +99,15 @@
         };
 
         _listenToHtmlClicks = function() {
-            CLOSE.addEventListener('click', _htmlClose);
-            CANCEL.addEventListener('click', _htmlNoThanks);
-            SUBMIT.addEventListener('click', _htmlSubmit);
+            if (CLOSE) {
+                CLOSE.addEventListener('click', _htmlClose);
+            }
+            if (CANCEL) {
+                CANCEL.addEventListener('click', _htmlNoThanks);
+            }
+            if (SUBMIT) {
+                SUBMIT.addEventListener('click', _htmlSubmit);
+            }
         };
 
         _listenToEvents = function() {
@@ -186,35 +201,10 @@
             event.preventDefault();
             window.kunstmaan.leadGeneration.log(instance.name + ': html submit form');
 
-            function findAncestor(el, sel) {
-                while ((el = el.parentElement) && !((el.matches || el.matchesSelector).call(el,sel)));
-                return el;
-            }
-
             document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.DO_SUBMIT_FORM, {detail: {popup: instance.name, form: findAncestor(SUBMIT, 'form')}}));
         };
 
         _submit = function(event) {
-            function serialize(form) {
-                var field, s = [];
-                if (typeof form == 'object' && form.nodeName == "FORM") {
-                    var len = form.elements.length;
-                    for (var i=0; i<len; i++) {
-                        field = form.elements[i];
-                        if (field.name && !field.disabled && field.type != 'file' && field.type != 'reset' && field.type != 'submit' && field.type != 'button') {
-                            if (field.type == 'select-multiple') {
-                                for (j=form.elements[i].options.length-1; j>=0; j--) {
-                                    if(field.options[j].selected)
-                                        s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.options[j].value);
-                                }
-                            } else if ((field.type != 'checkbox' && field.type != 'radio') || field.checked) {
-                                s[s.length] = encodeURIComponent(field.name) + "=" + encodeURIComponent(field.value);
-                            }
-                        }
-                    }
-                }
-                return s.join('&').replace(/%20/g, '+');
-            }
             if (event.detail.popup === instance.name) {
                 window.kunstmaan.leadGeneration.log(instance.name + ': submit form');
 
@@ -222,7 +212,11 @@
                 var data = serialize(event.detail.form);
 
                 var request = new XMLHttpRequest();
-                request.onreadystatechange = _onSubmitSuccess(request.responseText)
+                request.onreadystatechange = function() {
+                    if (request.readyState === 4) {
+                        _onSubmitSuccess(request.responseText);
+                    }
+                };
                 request.open('POST', url);
                 request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
                 request.send(data);
@@ -233,6 +227,8 @@
             window.kunstmaan.leadGeneration.log(instance.name + ': onSubmitSuccess');
 
             document.querySelector('#' + htmlId + '--content').innerHTML = data;
+
+            setElements();
             _listenToHtmlClicks();
         };
 
@@ -259,4 +255,60 @@
         return instance;
     };
 
+    function findAncestor(el, sel) {
+        while ((el = el.parentElement) && !((el.matches || el.matchesSelector).call(el,sel)));
+        return el;
+    }
+
+    function serialize(form) {
+        var data = [];
+
+        for (var i = form.elements.length - 1; i >= 0; i -= 1) {
+            if (form.elements[i].name === '') {
+                continue;
+            }
+            var elementName = form.elements[i].name;
+            var elementValue = form.elements[i].value;
+            var serialized = encodeURIComponent(elementName) + '=' + encodeURIComponent(elementValue);
+            var nodeName = form.elements[i].nodeName.toUpperCase();
+            switch (nodeName) {
+                case 'INPUT':
+                    switch (form.elements[i].type) {
+                        case 'file':
+                        case 'submit':
+                        case 'button':
+                            break;
+                        case 'checkbox':
+                        case 'radio':
+                            if (form.elements[i].checked) {
+                                data.push(serialized);
+                            }
+                            break;
+                        default:
+                            data.push(serialized);
+                            break;
+                    }
+                    break;
+                case 'TEXTAREA':
+                    data.push(serialized);
+                    break;
+                case 'SELECT':
+                    switch (form.elements[i].type) {
+                        case 'select-one':
+                            data.push(serialized);
+                            break;
+                        case 'select-multiple':
+                            for (var j = form.elements[i].options.length - 1; j >= 0; j -= 1) {
+                                if (form.elements[i].options[j].selected) {
+                                    data.push(encodeURIComponent(elementName) + '=' + encodeURIComponent(form.elements[i].options[j].value));
+                                }
+                            }
+                            break;
+                    }
+                    break;
+            }
+        }
+
+        return data.join('&');
+    }
 })(window, document);

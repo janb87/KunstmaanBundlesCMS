@@ -30,9 +30,9 @@
             }
             _locked = true;
 
-            var wintop = window.scrollTop,
-                docheight = document.height,
-                winheight = window.height,
+            var wintop = getScrollTop(),
+                docheight = document.body.clientHeight,
+                winheight = window.innerHeight,
                 percentage = (wintop / (docheight - winheight)) * 100;
 
             if (percentage > properties.percentage) {
@@ -49,4 +49,8 @@
         return instance;
     };
 
-})(window, document, $);
+    function getScrollTop() {
+        return (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
+    }
+
+})(window, document);
