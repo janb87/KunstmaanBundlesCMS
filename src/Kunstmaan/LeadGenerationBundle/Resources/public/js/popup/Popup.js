@@ -6,7 +6,8 @@
 
     window.kunstmaan.leadGeneration.Popup = function(name, htmlId) {
         var instance = {
-            'name': name
+            'name': name,
+            'id': htmlId
         };
 
         var RULES = [],
@@ -58,7 +59,7 @@
 
         instance.show = function() {
             window.kunstmaan.leadGeneration.log(instance.name + ": show popup");
-            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.BEFORE_SHOWING, { detail: {popup: instance.name} }));
+            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.BEFORE_SHOWING, { detail: {popup: instance.name, id: instance.id} }));
 
             POPUP.classList.remove('popup--hide');
             POPUP.classList.add('popup--show');
@@ -67,7 +68,7 @@
             data.last_shown = new window.Date().getTime();
             _setData(data);
 
-            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.IS_SHOWING, { detail: {popup: instance.name} }));
+            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.IS_SHOWING, { detail: {popup: instance.name, id: instance.id} }));
         };
 
         instance.setRuleProperty = function(ruleId, id, value) {
@@ -144,7 +145,7 @@
             // if all conditions are met notify that the popup is ready to be shown
             if (areMet && (data === null || (!data.already_converted && !data.no_thanks))) {
                 window.kunstmaan.leadGeneration.log(instance.name + ": firing ready event");
-                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.READY_TO_SHOW, { detail: {popup: instance.name} }));
+                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.READY_TO_SHOW, { detail: {popup: instance.name, id: instance.id} }));
             }
         };
 
@@ -153,7 +154,7 @@
 
             event.preventDefault();
 
-            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.DO_NO_THANKS, { detail: {popup: instance.name} }));
+            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.DO_NO_THANKS, { detail: {popup: instance.name, id: instance.id} }));
         };
 
         _noThanks = function(event) {
@@ -164,7 +165,7 @@
                 data.no_thanks = true;
                 _setData(data);
 
-                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.NO_THANKS, { detail: {popup: instance.name} }));
+                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.NO_THANKS, { detail: {popup: instance.name, id: instance.id} }));
 
                 _close(event);
             }
@@ -174,17 +175,17 @@
             event.preventDefault();
 
             window.kunstmaan.leadGeneration.log(instance.name + ": html close click");
-            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.DO_CLOSE, { detail: {popup: instance.name} }));
+            document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.DO_CLOSE, { detail: {popup: instance.name, id: instance.id} }));
         };
 
         _close = function(event) {
             if (event.detail.popup === instance.name) {
-                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.BEFORE_CLOSING, {detail: {popup: instance.name}}));
+                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.BEFORE_CLOSING, {detail: {popup: instance.name, id: instance.id}}));
                 window.kunstmaan.leadGeneration.log(instance.name + ": close event catched");
 
                 POPUP.classList.remove('popup--show')
                 POPUP.classList.add('popup--hide');
-                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.IS_CLOSING, {detail: {popup: instance.name}}));
+                document.dispatchEvent(new window.CustomEvent(window.kunstmaan.leadGeneration.events.IS_CLOSING, {detail: {popup: instance.name, id: instance.id}}));
             }
         };
 
@@ -227,6 +228,12 @@
             window.kunstmaan.leadGeneration.log(instance.name + ': onSubmitSuccess');
 
             document.querySelector('#' + htmlId + '--content').innerHTML = data;
+
+            var scripts = document.querySelectorAll('#' + htmlId + '--content script'), i;
+
+            for (i = 0; i < scripts.length; ++i) {
+                eval(scripts[i].innerText);
+            }
 
             setElements();
             _listenToHtmlClicks();
